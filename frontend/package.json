@@ -1,5 +1,5 @@
 {
-  "name": "weddingkityaari",
+  "name": "weddingkityaari-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
     "@tailwindcss/vite": "^4.1.18",
     "framer-motion": "^12.29.0",
+    "googleapis": "^171.0.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

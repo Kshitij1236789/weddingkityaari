@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, Heart, X, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import GoogleSignInButton from './GoogleSignInButton';
 
-const AuthModal = ({ isOpen, onClose, onAuthenticated }) => {
+const AuthModal = ({ isOpen, onClose }) => {
+  const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
@@ -59,42 +62,33 @@ const AuthModal = ({ isOpen, onClose, onAuthenticated }) => {
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let result;
 
       if (isLogin) {
-        // Check if user exists in localStorage
-        const users = JSON.parse(localStorage.getItem('weddingkityaari_users') || '[]');
-        const user = users.find(u => u.email === formData.email && u.password === formData.password);
-        
-        if (user) {
-          localStorage.setItem('weddingkityaari_current_user', JSON.stringify(user));
-          onAuthenticated(user);
-        } else {
-          setErrors({ general: 'Invalid email or password' });
-        }
+        result = await login({
+          email: formData.email,
+          password: formData.password
+        });
       } else {
-        // Register new user
-        const users = JSON.parse(localStorage.getItem('weddingkityaari_users') || '[]');
-        
-        // Check if user already exists
-        if (users.find(u => u.email === formData.email)) {
-          setErrors({ email: 'Email already registered' });
-          return;
-        }
-
-        const newUser = {
-          id: Date.now(),
+        result = await register({
           name: formData.name,
           email: formData.email,
-          password: formData.password,
-          createdAt: new Date().toISOString()
-        };
+          password: formData.password
+        });
+      }
 
-        users.push(newUser);
-        localStorage.setItem('weddingkityaari_users', JSON.stringify(users));
-        localStorage.setItem('weddingkityaari_current_user', JSON.stringify(newUser));
-        onAuthenticated(newUser);
+      if (result.success) {
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: ''
+        });
+        setErrors({});
+        onClose();
+      } else {
+        setErrors({ general: result.message });
       }
     } catch (error) {
       setErrors({ general: 'Something went wrong. Please try again.' });
@@ -248,6 +242,22 @@ const AuthModal = ({ isOpen, onClose, onAuthenticated }) => {
                 {isLoading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
               </button>
             </form>
+
+            {/* Divider */}
+            <div className="my-6 flex items-center">
+              <div className="flex-1 border-t border-gray-300"></div>
+              <span className="px-4 text-sm text-gray-500 bg-white">Or</span>
+              <div className="flex-1 border-t border-gray-300"></div>
+            </div>
+
+            {/* Google Sign-In Button */}
+            <GoogleSignInButton 
+              isLoading={isLoading}
+              onSuccess={() => {/* Google auth handles redirect */}}
+              onError={(error) => {
+                setErrors({ general: 'Google sign-in failed. Please try again.' });
+              }}
+            />
 
             <div className="mt-6 text-center">
               <p className="text-gray-600 text-sm">

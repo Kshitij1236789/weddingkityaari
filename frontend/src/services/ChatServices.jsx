@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { sendMessageToAI } from './aiService';
 
 /**
  * ChatServices Component
@@ -158,25 +159,7 @@ export const useChatService = () => {
     return PROMPT_TEMPLATES[promptType]?.prompt || PROMPT_TEMPLATES.wedding_planner.prompt;
   }, [selectedPrompt]);
 
-  const sendMessage = useCallback(async (userMessage) => {
-    const provider = (import.meta.env.VITE_AI_PROVIDER || 'openai').toLowerCase();
-    const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    const openaiModel = import.meta.env.VITE_API_MODEL || 'gpt-4';
-    const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const geminiModel = import.meta.env.VITE_GEMINI_MODEL || 'gemini-1.5-flash';
-
-    if (provider === 'gemini' && !geminiKey) {
-      const err = 'Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env.local';
-      setError(err);
-      throw new Error(err);
-    }
-
-    if (provider === 'openai' && !openaiKey) {
-      const err = 'OpenAI API key not configured. Add VITE_OPENAI_API_KEY to .env.local';
-      setError(err);
-      throw new Error(err);
-    }
-
+  const sendMessage = useCallback(async (userMessage, userContext = null) => {
     if (!userMessage?.trim()) {
       const err = 'Message cannot be empty';
       setError(err);
@@ -187,89 +170,15 @@ export const useChatService = () => {
     setError('');
 
     try {
-      const systemPrompt = getSystemPrompt(selectedPrompt);
-
-      // OpenAI provider
-      if (provider === 'openai') {
-        const response = await fetch(AI_CONFIG.openaiEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiKey}`,
-          },
-          body: JSON.stringify({
-            model: openaiModel,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userMessage },
-            ],
-            temperature: AI_CONFIG.temperature,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          const errorMessage = errorData.error?.message || 'Failed to get AI response';
-          setError(errorMessage);
-          throw new Error(errorMessage);
-        }
-
-        const data = await response.json();
-        return data.choices[0].message.content;
-      }
-
-      // Gemini provider
-      const geminiUrl = `${AI_CONFIG.geminiEndpoint}/models/${geminiModel}:generateContent`;
-      const response = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': geminiKey,
-        },
-        body: JSON.stringify({
-          system_instruction: {
-            role: 'system',
-            parts: [{ text: systemPrompt }],
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: userMessage }],
-            },
-          ],
-          generationConfig: {
-            temperature: AI_CONFIG.temperature,
-            topP: AI_CONFIG.top_p,
-            presencePenalty: AI_CONFIG.presence_penalty,
-            frequencyPenalty: AI_CONFIG.frequency_penalty,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMessage = errorData.error?.message || 'Failed to get AI response';
-        setError(errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      const geminiText = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join(' ').trim();
-      if (!geminiText) {
-        const err = 'No response from Gemini';
-        setError(err);
-        throw new Error(err);
-      }
-
-      return geminiText;
-    } catch (err) {
-      console.error('AI Service Error:', err);
-      setError(err.message);
-      throw err;
+      const aiResponse = await sendMessageToAI(userMessage, userContext);
+      return aiResponse;
+    } catch (error) {
+      setError(error.message);
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  }, [selectedPrompt, getSystemPrompt]);
+  }, []);
 
   const switchPrompt = useCallback((promptType) => {
     if (PROMPT_TEMPLATES[promptType]) {
@@ -356,7 +265,7 @@ const ChatServices = () => {
     },
   ]);
 
-  const handleSendMessage = async (userMessage) => {
+  const handleSendMessage = async (userMessage, userContext = null) => {
     if (!userMessage?.trim()) return;
 
     // Add user message
@@ -364,7 +273,7 @@ const ChatServices = () => {
 
     try {
       // Get AI response
-      const aiResponse = await sendMessage(userMessage);
+      const aiResponse = await sendMessage(userMessage, userContext);
       setMessages((prev) => [...prev, { role: 'assistant', text: aiResponse }]);
     } catch (err) {
       console.error('Failed to send message:', err);

@@ -3,8 +3,11 @@ import { motion } from 'framer-motion';
 import { Send, Sparkles, Bot, User, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import ChatServices, { useChatService, PromptSelector } from '../services/ChatServices';
+import { useAuth } from '../context/AuthContext';
+import { generatePersonalizedGreeting } from '../services/aiService';
 
 const AiChatSection = () => {
+  const { user } = useAuth();
   const {
     selectedPrompt,
     isLoading,
@@ -62,14 +65,7 @@ const AiChatSection = () => {
 
   // Mode-specific greeting messages
   const getModeGreeting = (promptType) => {
-    const greetings = {
-      wedding_planner: 'Namaste! I am your WeddingKiTyaari assistant. Ready to plan your dream wedding?',
-      venue_expert: 'Hello! I\'m your Venue & Logistics Expert. Let\'s find the perfect venue for your special day!',
-      catering_specialist: 'Welcome! I\'m your Catering Specialist. Ready to design a delicious menu for your wedding?',
-      design_coordinator: 'Hi there! I\'m your Design & Decor Coordinator. Let\'s create a beautiful aesthetic for your celebration!',
-      budget_advisor: 'Hello! I\'m your Budget Advisor. Let\'s plan a wedding that fits your budget perfectly!'
-    };
-    return greetings[promptType] || greetings.wedding_planner;
+    return generatePersonalizedGreeting(promptType, user);
   };
 
   const [messages, setMessages] = useState(() => loadChatHistory());
@@ -80,6 +76,18 @@ const AiChatSection = () => {
   });
   const scrollRef = useRef(null);
   const availablePrompts = getAvailablePrompts();
+
+  // Update greeting when user logs in or user data changes
+  useEffect(() => {
+    const currentHistory = loadChatHistory();
+    // Only update greeting if it's the first message and it's an assistant message
+    if (currentHistory.length === 1 && currentHistory[0].role === 'assistant') {
+      const newGreeting = getModeGreeting(selectedPrompt);
+      const updatedHistory = [{ role: 'assistant', text: newGreeting }];
+      setMessages(updatedHistory);
+      saveChatHistory(updatedHistory, selectedPrompt);
+    }
+  }, [user, selectedPrompt]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,8 +129,10 @@ const AiChatSection = () => {
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
 
     try {
-      // Call AI service with the user message
-      const aiResponse = await sendMessage(userMessage);
+      // Call AI service with the user message and user context
+      console.log('Sending message to AI:', userMessage); // Debug log
+      const aiResponse = await sendMessage(userMessage, user);
+      console.log('Received AI response:', aiResponse); // Debug log
       setMessages(prev => [...prev, { role: 'assistant', text: aiResponse }]);
     } catch (err) {
       setError('Failed to get response. Please check your API key and try again.');

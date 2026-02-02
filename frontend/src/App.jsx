@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthModal from './components/AuthModal';
 import UserHeader from './components/UserHeader';
@@ -6,16 +6,29 @@ import ProfileSettings from './components/ProfileSettings';
 import MyWeddingPlans from './components/MyWeddingPlans';
 import { HeroSection } from './components/HeroSection'; // Ensure the path matches your folder structure
 import AiChatSection from './components/AichatSection'; // Ensure the path matches your folder structure
+import GoogleAuthCallback from './components/GoogleAuthCallback';
 
 const AppContent = () => {
-  const { isAuthenticated, login, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [currentPage, setCurrentPage] = useState('home'); // 'home', 'profile', 'wedding-plans'
 
-  const handleAuthenticated = (userData) => {
-    login(userData);
-    setShowAuthModal(false);
-  };
+  // Check for Google OAuth callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userDataString = urlParams.get('user');
+    
+    if (window.location.pathname === '/auth/google/success' && token && userDataString) {
+      // This will be handled by GoogleAuthCallback component
+      return;
+    }
+  }, []);
+
+  // Check if this is a Google OAuth callback URL
+  if (window.location.pathname === '/auth/google/success') {
+    return <GoogleAuthCallback />;
+  }
 
   const handleGetStarted = () => {
     setShowAuthModal(true);
@@ -70,7 +83,6 @@ const AppContent = () => {
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)}
-        onAuthenticated={handleAuthenticated}
       />
     </div>
   );
