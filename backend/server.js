@@ -5,7 +5,7 @@ const cors = require('cors');
 const session = require('express-session');
 const { connectDB, User, ChatHistory } = require('./DB');
 const { passport, generateToken, formatUserData, isGoogleOAuthConfigured } = require('./googleAuth');
-require('dotenv').config({ path: '.env.local' });
+require('dotenv').config();
 
 const app = express();
 
