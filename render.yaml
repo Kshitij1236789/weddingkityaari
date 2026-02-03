@@ -10,3 +10,17 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        fromDatabase:
+          name: weddingkityaari-mongodb
+          property: connectionString
+      - key: FRONTEND_URL
+        value: https://weddingkityaari.vercel.app
+      - key: GOOGLE_CLIENT_ID
+        sync: false  # You'll set this manually in Render dashboard
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false  # You'll set this manually in Render dashboard
+      - key: GOOGLE_CALLBACK_URL
+        value: https://your-render-app-name.onrender.com/api/auth/google/callback

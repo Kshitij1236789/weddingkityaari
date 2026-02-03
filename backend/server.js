@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const mongoose = require('mongoose');
 const { connectDB, User, ChatHistory } = require('./DB');
 const { passport, generateToken, formatUserData, isGoogleOAuthConfigured } = require('./googleAuth');
 require('dotenv').config();
@@ -14,12 +16,32 @@ connectDB();
 
 // Middleware
 app.use(express.json());
-app.use(session({
+
+// Session configuration for production vs development
+const sessionConfig = {
   secret: process.env.JWT_SECRET || 'your-session-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true in production with HTTPS
-}));
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+};
+
+// Use MongoDB store for sessions in production
+if (process.env.NODE_ENV === 'production') {
+  sessionConfig.store = MongoStore.create({
+    client: mongoose.connection.getClient(),
+    ttl: 24 * 60 * 60, // 24 hours
+    touchAfter: 24 * 3600 // lazy session update
+  });
+  console.log('Using MongoDB session store for production');
+} else {
+  console.log('Using MemoryStore for sessions (development only)');
+}
+
+app.use(session(sessionConfig));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(cors({
