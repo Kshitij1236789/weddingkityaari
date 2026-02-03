@@ -105,6 +105,20 @@ app.get('/api/auth/google/success', (req, res) => {
   res.json({ message: 'Google authentication successful' });
 });
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'WeddingKiTyaari Backend API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth/*',
+      chat: '/api/chat/*'
+    }
+  });
+});
+
 // Traditional Authentication Routes
 
 // Register endpoint
