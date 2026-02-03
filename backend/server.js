@@ -109,8 +109,9 @@ app.get('/api/auth/google/success', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     message: 'WeddingKiTyaari Backend API',
-    version: '1.0.0',
+    version: '1.0.1',
     status: 'running',
+    timestamp: new Date().toISOString(),
     endpoints: {
       health: '/api/health',
       auth: '/api/auth/*',
