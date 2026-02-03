@@ -1,35 +1,9 @@
-# Railway Deployment
-railway.json
-.railway/
-
-# Environment files
+node_modules/
 .env
 .env.local
 .env.production
-
-# Logs
-*.log
 npm-debug.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-
-# Coverage directory used by tools like istanbul
-coverage
-
-# Dependencies
-node_modules/
-
-# Optional npm cache directory
-.npm
-
-# OS generated files
+yarn-debug.log*
+yarn-error.log*
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+*.log
