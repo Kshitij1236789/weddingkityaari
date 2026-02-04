@@ -9,6 +9,17 @@ const { connectDB, User, ChatHistory } = require('./DB');
 const { passport, generateToken, formatUserData, isGoogleOAuthConfigured } = require('./googleAuth');
 require('dotenv').config();
 
+// Validate required environment variables
+const requiredEnvVars = ['FRONTEND_URL', 'JWT_SECRET', 'MONGODB_URI'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('FATAL: Missing required environment variables:', missingEnvVars);
+  console.error('Please set the following environment variables:');
+  missingEnvVars.forEach(envVar => console.error(`  - ${envVar}`));
+  process.exit(1);
+}
+
 const app = express();
 
 // Initialize database connection
@@ -19,7 +30,7 @@ app.use(express.json());
 
 // Session configuration for production vs development
 const sessionConfig = {
-  secret: process.env.JWT_SECRET || 'your-session-secret',
+  secret: process.env.JWT_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { 
@@ -46,18 +57,18 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'http://localhost:5178',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-    'https://weddingkityaari.vercel.app', // Add your actual Vercel domain here
+    process.env.FRONTEND_URL,
     /^https:\/\/.*\.vercel\.app$/ // Allow all Vercel subdomains
-  ],
+  ].filter(Boolean), // Remove undefined values
   credentials: true
 }));
 
-// JWT Secret
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key';
+// JWT Secret - MUST be set via environment variable
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is required');
+  process.exit(1);
+}
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
@@ -89,7 +100,7 @@ if (isGoogleOAuthConfigured()) {
 
   // Google OAuth callback
   app.get('/api/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth?error=google_auth_failed` }),
+    passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}/auth?error=google_auth_failed` }),
     async (req, res) => {
       try {
         // Generate JWT token
@@ -97,13 +108,13 @@ if (isGoogleOAuthConfigured()) {
         const userData = formatUserData(req.user);
         
         // Redirect to frontend with token and user data
-        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendURL = process.env.FRONTEND_URL;
         const redirectURL = `${frontendURL}/auth/google/success?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
         
         res.redirect(redirectURL);
       } catch (error) {
         console.error('Google callback error:', error);
-        const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendURL = process.env.FRONTEND_URL;
         res.redirect(`${frontendURL}/auth?error=callback_failed`);
       }
     }
@@ -118,7 +129,7 @@ if (isGoogleOAuthConfigured()) {
   });
   
   app.get('/api/auth/google/callback', (req, res) => {
-    const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendURL = process.env.FRONTEND_URL;
     res.redirect(`${frontendURL}/auth?error=google_oauth_not_configured`);
   });
 }
