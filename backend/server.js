@@ -50,7 +50,8 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
-    'https://weddingkityaari.vercel.app' // Add your actual Vercel domain here
+    'https://weddingkityaari.vercel.app', // Add your actual Vercel domain here
+    /^https:\/\/.*\.vercel\.app$/ // Allow all Vercel subdomains
   ],
   credentials: true
 }));
@@ -133,13 +134,31 @@ app.get('/', (req, res) => {
     message: 'WeddingKiTyaari Backend API',
     version: '1.0.1',
     status: 'running',
-    timestamp: new Date().toISOString(),
     endpoints: {
       health: '/api/health',
       auth: '/api/auth/*',
       chat: '/api/chat/*'
     }
   });
+});
+
+// Health check endpoint with timestamp
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage()
+  });
+});
+
+// Handle static assets requests (prevent 401 errors)
+app.get('/vite.svg', (req, res) => {
+  res.status(404).json({ error: 'Static asset not found - this is a backend API server' });
+});
+
+app.get('/assets/*', (req, res) => {
+  res.status(404).json({ error: 'Static asset not found - this is a backend API server' });
 });
 
 // Traditional Authentication Routes

@@ -3,6 +3,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const AuthContext = createContext();
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+// Debug logging for production
+console.log('🔧 Frontend Environment Config:');
+console.log('  - API_URL:', API_URL);
+console.log('  - VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('  - Mode:', import.meta.env.MODE);
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
