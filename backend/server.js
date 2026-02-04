@@ -128,6 +128,26 @@ app.get('/api/auth/google/success', (req, res) => {
   res.json({ message: 'Google authentication successful' });
 });
 
+// Auth info endpoint
+app.get('/api/auth', (req, res) => {
+  res.json({
+    message: 'WeddingKiTyaari Authentication API',
+    available_endpoints: {
+      google_auth: '/api/auth/google',
+      google_callback: '/api/auth/google/callback',
+      register: 'POST /api/auth/register',
+      login: 'POST /api/auth/login',
+      profile: 'GET /api/auth/profile (requires token)',
+      logout: 'POST /api/auth/logout'
+    },
+    authentication_methods: [
+      'Traditional email/password',
+      'Google OAuth'
+    ],
+    google_oauth_configured: isGoogleOAuthConfigured()
+  });
+});
+
 // Root route
 app.get('/', (req, res) => {
   res.json({ 
@@ -357,6 +377,18 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Profile update error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', authenticateToken, async (req, res) => {
+  try {
+    // In JWT, we don't need to do anything server-side for logout
+    // The client should remove the token from storage
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
