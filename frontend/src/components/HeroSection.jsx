@@ -107,37 +107,35 @@ export function HeroSection({ onGetStarted, isAuthenticated }) {
         </motion.p>
 
         {/* Authentication CTA */}
-        {!isAuthenticated && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            className="space-y-4"
+        {/* Always show the get started button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="space-y-4"
+        >
+          <button
+            onClick={onGetStarted}
+            className="bg-gradient-to-r from-orange-500 to-pink-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-pink-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
           >
-            <button
-              onClick={onGetStarted}
-              className="bg-gradient-to-r from-orange-500 to-pink-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-orange-600 hover:to-pink-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
-            >
-              Start Planning Your Dream Wedding
-            </button>
-            <p className="text-sm text-gray-600">
-              Join thousands of couples planning their perfect day
-            </p>
-          </motion.div>
-        )}
+            Explore AI Wedding Planner ✨
+          </button>
+          <p className="text-sm text-gray-600">
+            No account needed - Start planning your perfect day instantly
+          </p>
+        </motion.div>
       </motion.div>
       
-      {/* Bouncing Scroll Indicator - Only show when authenticated */}
-      {isAuthenticated && (
-        <motion.div
-          className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-20"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9, duration: 0.6 }}
-          onClick={() => {
-            window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
-          }}
-        >
+      {/* Always show scroll indicator */}
+      <motion.div
+        className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer z-20"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.9, duration: 0.6 }}
+        onClick={() => {
+          window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+        }}
+      >
           <span className="text-sm tracking-wider uppercase font-semibold text-[#F2613F]">
             Scroll to Start Planning
           </span>
@@ -148,7 +146,7 @@ export function HeroSection({ onGetStarted, isAuthenticated }) {
             <ChevronDown className="w-6 h-6 text-[#F2613F]" />
           </motion.div>
         </motion.div>
-      )}
+
     </div>
   );
 }

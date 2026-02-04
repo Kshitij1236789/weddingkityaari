@@ -90,72 +90,40 @@ const authenticateToken = (req, res, next) => {
 
 // Routes
 
-// Google OAuth Routes
-// Check if Google OAuth is configured before setting up routes
-if (isGoogleOAuthConfigured()) {
-  // Initiate Google OAuth
-  app.get('/api/auth/google', 
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-  );
+// Google OAuth Routes - DISABLED
+// Authentication is now optional for AI features
 
-  // Google OAuth callback
-  app.get('/api/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL}/auth?error=google_auth_failed` }),
-    async (req, res) => {
-      try {
-        // Generate JWT token
-        const token = generateToken(req.user);
-        const userData = formatUserData(req.user);
-        
-        // Redirect to frontend with token and user data
-        const frontendURL = process.env.FRONTEND_URL;
-        const redirectURL = `${frontendURL}/auth/google/success?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
-        
-        res.redirect(redirectURL);
-      } catch (error) {
-        console.error('Google callback error:', error);
-        const frontendURL = process.env.FRONTEND_URL;
-        res.redirect(`${frontendURL}/auth?error=callback_failed`);
-      }
-    }
-  );
-} else {
-  // Provide error endpoints when Google OAuth is not configured
-  app.get('/api/auth/google', (req, res) => {
-    res.status(501).json({ 
-      error: 'Google OAuth not configured', 
-      message: 'Please configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in environment variables' 
-    });
+app.get('/api/auth/google', (req, res) => {
+  res.status(503).json({ 
+    error: 'Google OAuth disabled', 
+    message: 'Authentication is optional. You can use AI features without logging in.' 
   });
-  
-  app.get('/api/auth/google/callback', (req, res) => {
-    const frontendURL = process.env.FRONTEND_URL;
-    res.redirect(`${frontendURL}/auth?error=google_oauth_not_configured`);
-  });
-}
+});
 
-// Google OAuth success endpoint (for handling redirect)
+app.get('/api/auth/google/callback', (req, res) => {
+  const frontendURL = process.env.FRONTEND_URL;
+  res.redirect(`${frontendURL}?message=auth_disabled`);
+});
+
 app.get('/api/auth/google/success', (req, res) => {
-  res.json({ message: 'Google authentication successful' });
+  res.status(503).json({ message: 'Authentication disabled - AI features available without login' });
 });
 
 // Auth info endpoint
 app.get('/api/auth', (req, res) => {
   res.json({
-    message: 'WeddingKiTyaari Authentication API',
-    available_endpoints: {
-      google_auth: '/api/auth/google',
-      google_callback: '/api/auth/google/callback',
-      register: 'POST /api/auth/register',
-      login: 'POST /api/auth/login',
-      profile: 'GET /api/auth/profile (requires token)',
-      logout: 'POST /api/auth/logout'
+    message: 'WeddingKiTyaari API - Authentication Optional',
+    status: 'Authentication disabled for AI features',
+    ai_access: 'Available without login',
+    note: 'You can explore AI wedding planning features without creating an account',
+    disabled_endpoints: {
+      google_auth: '/api/auth/google (disabled)',
+      register: 'POST /api/auth/register (disabled)',
+      login: 'POST /api/auth/login (disabled)'
     },
-    authentication_methods: [
-      'Traditional email/password',
-      'Google OAuth'
-    ],
-    google_oauth_configured: isGoogleOAuthConfigured()
+    available_endpoints: {
+      ai_chat: 'POST /api/chat/:mode (no auth required)'
+    }
   });
 });
 
@@ -406,53 +374,62 @@ app.post('/api/auth/logout', authenticateToken, async (req, res) => {
 
 // Chat History Routes
 
-// Get chat history for a specific mode
-app.get('/api/chat/:mode', authenticateToken, async (req, res) => {
+// Get chat history for a specific mode (no auth required)
+app.get('/api/chat/:mode', async (req, res) => {
   try {
     const { mode } = req.params;
-    const chatHistory = await ChatHistory.findOne({
-      userId: req.user.userId,
-      mode: mode
+    
+    // Since no auth required, return empty messages for now
+    // In future, could implement session-based storage or localStorage
+    res.json({ 
+      messages: [],
+      note: 'Chat history not persisted without user account'
     });
-
-    if (!chatHistory) {
-      return res.json({ messages: [] });
-    }
-
-    res.json({ messages: chatHistory.messages });
   } catch (error) {
     console.error('Get chat history error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// Save/Update chat history
-app.post('/api/chat/:mode', authenticateToken, async (req, res) => {
+// Save chat history (no auth required - temporary storage only)
+app.post('/api/chat/:mode', async (req, res) => {
   try {
     const { mode } = req.params;
     const { messages } = req.body;
 
-    let chatHistory = await ChatHistory.findOne({
-      userId: req.user.userId,
-      mode: mode
+    // Without authentication, we can't persist chat history
+    // Return success but don't save to database
+    res.json({ 
+      message: 'Chat processed successfully',
+      note: 'Chat history not persisted without user account',
+      mode: mode,
+      messageCount: messages?.length || 0
     });
-
-    if (chatHistory) {
-      chatHistory.messages = messages;
-      chatHistory.lastUpdated = new Date();
-    } else {
-      chatHistory = new ChatHistory({
-        userId: req.user.userId,
-        mode: mode,
-        messages: messages
-      });
-    }
-
-    await chatHistory.save();
-    res.json({ message: 'Chat history saved successfully' });
   } catch (error) {
     console.error('Save chat history error:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// AI Chat endpoint (no authentication required)
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const { message, mode = 'wedding_planner' } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // Return a simple response for now - frontend will handle AI processing
+    res.json({
+      success: true,
+      mode: mode,
+      message: 'AI chat endpoint ready - processing handled by frontend',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('AI chat error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

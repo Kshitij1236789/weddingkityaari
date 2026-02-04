@@ -3,11 +3,9 @@ import { motion } from 'framer-motion';
 import { Send, Sparkles, Bot, User, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import ChatServices, { useChatService, PromptSelector } from '../services/ChatServices';
-import { useAuth } from '../context/AuthContext';
 import { generatePersonalizedGreeting } from '../services/aiService';
 
 const AiChatSection = () => {
-  const { user } = useAuth();
   const {
     selectedPrompt,
     isLoading,
@@ -65,7 +63,7 @@ const AiChatSection = () => {
 
   // Mode-specific greeting messages
   const getModeGreeting = (promptType) => {
-    return generatePersonalizedGreeting(promptType, user);
+    return generatePersonalizedGreeting(promptType, null); // No user context needed
   };
 
   const [messages, setMessages] = useState(() => loadChatHistory());
@@ -77,7 +75,7 @@ const AiChatSection = () => {
   const scrollRef = useRef(null);
   const availablePrompts = getAvailablePrompts();
 
-  // Update greeting when user logs in or user data changes
+  // Update greeting when prompt changes
   useEffect(() => {
     const currentHistory = loadChatHistory();
     // Only update greeting if it's the first message and it's an assistant message
@@ -87,7 +85,7 @@ const AiChatSection = () => {
       setMessages(updatedHistory);
       saveChatHistory(updatedHistory, selectedPrompt);
     }
-  }, [user, selectedPrompt]);
+  }, [selectedPrompt]); // Removed user dependency
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -129,9 +127,9 @@ const AiChatSection = () => {
     setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
 
     try {
-      // Call AI service with the user message and user context
+      // Call AI service with the user message (no user context needed)
       console.log('Sending message to AI:', userMessage); // Debug log
-      const aiResponse = await sendMessage(userMessage, user);
+      const aiResponse = await sendMessage(userMessage, null); // No user context
       console.log('Received AI response:', aiResponse); // Debug log
       setMessages(prev => [...prev, { role: 'assistant', text: aiResponse }]);
     } catch (err) {
