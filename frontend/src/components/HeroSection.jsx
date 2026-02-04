@@ -121,7 +121,7 @@ export function HeroSection({ onGetStarted, isAuthenticated }) {
             Explore AI Wedding Planner ✨
           </button>
           <p className="text-sm text-gray-600">
-            No account needed - Start planning your perfect day instantly
+            No account needed - Start planning your perfect day instantly ✨
           </p>
         </motion.div>
       </motion.div>
